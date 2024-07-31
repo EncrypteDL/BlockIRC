@@ -1,7 +1,3 @@
-**BlockIRC**:
-
----
-
 # BlockIRC
 
 BlockIRC is a modern and secure IRC (Internet Relay Chat) server/daemon written in Go. It is designed to support blockchain and distributed systems projects, offering enhanced security, privacy, and scalability. BlockIRC aims to integrate seamlessly with blockchain ecosystems, providing a reliable communication platform for decentralized applications and services.
@@ -13,6 +9,12 @@ BlockIRC is a modern and secure IRC (Internet Relay Chat) server/daemon written 
 - **Scalable Architecture**: Designed for high availability and scalability, suitable for large-scale deployments.
 - **Extensible and Customizable**: Easily extendable with custom modules and configurations to fit specific needs.
 - **Audit Logging**: Comprehensive logging features for monitoring and auditing chat activities.
+- **Customizable Authentication**: Supports multiple authentication methods, including OAuth, for secure user access.
+- **Data Encryption**: Ensures end-to-end encryption of messages, protecting user data and communications.
+- **Multi-Network Support**: Connects to multiple IRC networks simultaneously, allowing for broad communication reach.
+- **Bot Integration**: Easily integrates with chatbots for automation and enhanced functionality.
+- **Federated Architecture**: Allows for distributed deployment, enhancing redundancy and fault tolerance.
+
 
 ## Use Cases
 
