@@ -1,10 +1,363 @@
-package command
+package pkg
 
 import (
+	"errors"
 	"fmt"
+	"regexp"
 	"strconv"
 	"strings"
 )
+
+type Command interface {
+	Client() *Client
+	Code() StringCode
+	SetClient(*Client)
+	SetCode(StringCode)
+}
+
+type checkPasswordCommand interface {
+	LoadPassword(*Server)
+	CheckPassword()
+}
+
+type parseCommandFunc func([]string) (Command, error)
+
+var (
+	NotEnoughArgsError = errors.New("not enough arguments")
+	ErrParseCommand    = errors.New("failed to parse message")
+	parseCommandFuncs  = map[StringCode]parseCommandFunc{
+		AUTHENTICATE: ParseAuthenticateCommand,
+		AWAY:         ParseAwayCommand,
+		CAP:          ParseCapCommand,
+		INVITE:       ParseInviteCommand,
+		ISON:         ParseIsOnCommand,
+		JOIN:         ParseJoinCommand,
+		KICK:         ParseKickCommand,
+		KILL:         ParseKillCommand,
+		LIST:         ParseListCommand,
+		MODE:         ParseModeCommand,
+		MOTD:         ParseMOTDCommand,
+		NAMES:        ParseNamesCommand,
+		NICK:         ParseNickCommand,
+		NOTICE:       ParseNoticeCommand,
+		ONICK:        ParseOperNickCommand,
+		OPER:         ParseOperCommand,
+		REHASH:       ParseRehashCommand,
+		PART:         ParsePartCommand,
+		PASS:         ParsePassCommand,
+		PING:         ParsePingCommand,
+		PONG:         ParsePongCommand,
+		PRIVMSG:      ParsePrivMsgCommand,
+		QUIT:         ParseQuitCommand,
+		TIME:         ParseTimeCommand,
+		LUSERS:       ParseLUsersCommand,
+		TOPIC:        ParseTopicCommand,
+		USER:         ParseUserCommand,
+		VERSION:      ParseVersionCommand,
+		WALLOPS:      ParseWallopsCommand,
+		WHO:          ParseWhoCommand,
+		WHOIS:        ParseWhoisCommand,
+		WHOWAS:       ParseWhoWasCommand,
+	}
+)
+
+type BaseCommand struct {
+	client *Client
+	code   StringCode
+}
+
+func (command *BaseCommand) Client() *Client {
+	return command.client
+}
+
+func (command *BaseCommand) SetClient(client *Client) {
+	command.client = client
+}
+
+func (command *BaseCommand) Code() StringCode {
+	return command.code
+}
+
+func (command *BaseCommand) SetCode(code StringCode) {
+	command.code = code
+}
+
+func ParseCommand(line string) (cmd Command, err error) {
+	code, args := ParseLine(line)
+	constructor := parseCommandFuncs[code]
+	if constructor == nil {
+		cmd = ParseUnknownCommand(args)
+	} else {
+		cmd, err = constructor(args)
+	}
+	if cmd != nil {
+		cmd.SetCode(code)
+	}
+	return
+}
+
+var (
+	spacesExpr = regexp.MustCompile(` +`)
+)
+
+func splitArg(line string) (arg string, rest string) {
+	parts := spacesExpr.Split(line, 2)
+	if len(parts) > 0 {
+		arg = parts[0]
+	}
+	if len(parts) > 1 {
+		rest = parts[1]
+	}
+	return
+}
+
+func ParseLine(line string) (command StringCode, args []string) {
+	args = make([]string, 0)
+	if strings.HasPrefix(line, ":") {
+		_, line = splitArg(line)
+	}
+	arg, line := splitArg(line)
+	command = StringCode(NewName(strings.ToUpper(arg)))
+	for len(line) > 0 {
+		if strings.HasPrefix(line, ":") {
+			args = append(args, line[len(":"):])
+			break
+		}
+		arg, line = splitArg(line)
+		args = append(args, arg)
+	}
+	return
+}
+
+// <command> [args...]
+
+type UnknownCommand struct {
+	BaseCommand
+	args []string
+}
+
+func ParseUnknownCommand(args []string) *UnknownCommand {
+	return &UnknownCommand{
+		args: args,
+	}
+}
+
+// PING <server1> [ <server2> ]
+
+type PingCommand struct {
+	BaseCommand
+	server  Name
+	server2 Name
+}
+
+func ParsePingCommand(args []string) (Command, error) {
+	if len(args) < 1 {
+		return nil, NotEnoughArgsError
+	}
+	msg := &PingCommand{
+		server: NewName(args[0]),
+	}
+	if len(args) > 1 {
+		msg.server2 = NewName(args[1])
+	}
+	return msg, nil
+}
+
+// PONG <server> [ <server2> ]
+
+type PongCommand struct {
+	BaseCommand
+	server1 Name
+	server2 Name
+}
+
+func ParsePongCommand(args []string) (Command, error) {
+	if len(args) < 1 {
+		return nil, NotEnoughArgsError
+	}
+	message := &PongCommand{
+		server1: NewName(args[0]),
+	}
+	if len(args) > 1 {
+		message.server2 = NewName(args[1])
+	}
+	return message, nil
+}
+
+// AUTHENTICATE <arg>
+
+type AuthenticateCommand struct {
+	BaseCommand
+	arg string
+}
+
+func ParseAuthenticateCommand(args []string) (Command, error) {
+	if len(args) < 1 {
+		return nil, NotEnoughArgsError
+	}
+	return &AuthenticateCommand{
+		arg: args[0],
+	}, nil
+}
+
+// PASS <password>
+
+type PassCommand struct {
+	BaseCommand
+	hash     []byte
+	password []byte
+	err      error
+}
+
+func (cmd *PassCommand) LoadPassword(server *Server) {
+	cmd.hash = server.password
+}
+
+func (cmd *PassCommand) CheckPassword() {
+	if cmd.hash == nil {
+		return
+	}
+	cmd.err = ComparePassword(cmd.hash, cmd.password)
+}
+
+func ParsePassCommand(args []string) (Command, error) {
+	if len(args) < 1 {
+		return nil, NotEnoughArgsError
+	}
+	return &PassCommand{
+		password: []byte(args[0]),
+	}, nil
+}
+
+// NICK <nickname>
+
+func ParseNickCommand(args []string) (Command, error) {
+	if len(args) != 1 {
+		return nil, NotEnoughArgsError
+	}
+	return &NickCommand{
+		nickname: NewName(args[0]),
+	}, nil
+}
+
+type UserCommand struct {
+	BaseCommand
+	username Name
+	realname Text
+}
+
+// USER <username> <hostname> <servername> <realname>
+type RFC1459UserCommand struct {
+	UserCommand
+	hostname   Name
+	servername Name
+}
+
+// USER <user> <mode> <unused> <realname>
+type RFC2812UserCommand struct {
+	UserCommand
+	mode   uint8
+	unused string
+}
+
+func (cmd *RFC2812UserCommand) Flags() []UserMode {
+	flags := make([]UserMode, 0)
+	if (cmd.mode & 4) == 4 {
+		flags = append(flags, WallOps)
+	}
+	if (cmd.mode & 8) == 8 {
+		flags = append(flags, Invisible)
+	}
+	return flags
+}
+
+func ParseUserCommand(args []string) (Command, error) {
+	if len(args) != 4 {
+		return nil, NotEnoughArgsError
+	}
+	mode, err := strconv.ParseUint(args[1], 10, 8)
+	if err == nil {
+		msg := &RFC2812UserCommand{
+			mode:   uint8(mode),
+			unused: args[2],
+		}
+		msg.username = NewName(args[0])
+		msg.realname = NewText(args[3])
+		return msg, nil
+	}
+
+	msg := &RFC1459UserCommand{
+		hostname:   NewName(args[1]),
+		servername: NewName(args[2]),
+	}
+	msg.username = NewName(args[0])
+	msg.realname = NewText(args[3])
+	return msg, nil
+}
+
+// QUIT [ <Quit Command> ]
+
+type QuitCommand struct {
+	BaseCommand
+	message Text
+}
+
+func NewQuitCommand(message Text) *QuitCommand {
+	cmd := &QuitCommand{
+		message: message,
+	}
+	cmd.code = QUIT
+	return cmd
+}
+
+func ParseQuitCommand(args []string) (Command, error) {
+	msg := &QuitCommand{}
+	if len(args) > 0 {
+		msg.message = NewText(args[0])
+	}
+	return msg, nil
+}
+
+// JOIN ( <channel> *( "," <channel> ) [ <key> *( "," <key> ) ] ) / "0"
+
+type JoinCommand struct {
+	BaseCommand
+	channels map[Name]Text
+	zero     bool
+}
+
+func ParseJoinCommand(args []string) (Command, error) {
+	msg := &JoinCommand{
+		channels: make(map[Name]Text),
+	}
+
+	if len(args) == 0 {
+		return nil, NotEnoughArgsError
+	}
+
+	if args[0] == "0" {
+		msg.zero = true
+		return msg, nil
+	}
+
+	channels := strings.Split(args[0], ",")
+	keys := make([]string, len(channels))
+	if len(args) > 1 {
+		for i, key := range strings.Split(args[1], ",") {
+			if i >= len(channels) {
+				break
+			}
+			keys[i] = key
+		}
+	}
+	for i, channel := range channels {
+		msg.channels[NewName(channel)] = NewText(keys[i])
+	}
+
+	return msg, nil
+}
+
+// PART <channel> *( "," <channel> ) [ <Part Command> ]
 
 type PartCommand struct {
 	BaseCommand

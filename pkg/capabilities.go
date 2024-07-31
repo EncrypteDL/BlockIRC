@@ -1,9 +1,7 @@
-package internal
+package pkg
 
 import (
 	"strings"
-
-	"github.com/cockroachdb/pebble/rangekey"
 )
 
 type CapSubCommand string
@@ -34,7 +32,7 @@ var (
 )
 
 func (capability Capability) String() string {
-	return capability.String()
+	return string(capability)
 }
 
 // CapModifiers are indicators showing the state of a capability after a REQ or
@@ -48,38 +46,37 @@ const (
 )
 
 func (mod CapModifier) String() string {
-	return mod.String()
+	return string(mod)
 }
 
 type CapState uint
 
-const(
-	CapNone CapState = iota
+const (
+	CapNone        CapState = iota
 	CapNegotiating CapState = iota
-	CapNegotiated CapState = iota
+	CapNegotiated  CapState = iota
 )
 
 type CapabilitySet map[Capability]bool
 
-func (set CapabilitySet) String() string{
-	strs :=  make([]string, len(set))
+func (set CapabilitySet) String() string {
+	strs := make([]string, len(set))
 	index := 0
-	for Capability := range set{
-		strs[index] = Capability.String()
+	for capability := range set {
+		strs[index] = string(capability)
 		index += 1
 	}
-	return strings.Join(strs, "")
+	return strings.Join(strs, " ")
 }
 
-func (set CapabilitySet) DisableString() string{
+func (set CapabilitySet) DisableString() string {
 	parts := make([]string, len(set))
-
 	index := 0
-	for Capability := range set{
-		parts[index] = Disable.String() + Capability.String()
+	for capability := range set {
+		parts[index] = Disable.String() + capability.String()
 		index += 1
 	}
-	return strings.Join(parts, "")
+	return strings.Join(parts, " ")
 }
 
 func (msg *CapCommand) HandleRegServer(server *Server) {

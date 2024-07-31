@@ -1,0 +1,38 @@
+version: "3.3"
+
+services:
+  blockirc:
+    image: blockirc:latest
+    configs:
+      - source: ircd_yml
+        target: ./ircd.yml
+      - source: ircd_motd
+        target: /ircd.motd
+      - source: cert_pem
+        target: /cert.pem
+      - source: key_pem
+        target: /key.pem
+    ports:
+      - target: 6667
+        published: 6667
+        protocol: tcp
+        mode: host
+      - target: 6697
+        published: 6697
+        protocol: tcp
+        mode: host
+    deploy:
+      endpoint_mode: dnsrr
+      restart_policy:
+        condition: on-failure
+      replicas: 1
+
+configs:
+  ircd_yml:
+    file: ./ircd.yml
+  ircd_motd:
+    file: ./ircd.motd
+  cert_pem:
+    file: ./cert.pem
+  key_pem:
+    file: ./key.pem

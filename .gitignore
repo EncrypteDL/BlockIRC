@@ -1,0 +1,9 @@
+*~
+*.db
+*.bak
+*.pem
+
+/bin
+/dist
+/blockIris
+/coverage.txt
