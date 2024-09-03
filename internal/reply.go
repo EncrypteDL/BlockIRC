@@ -1,4 +1,4 @@
-package pkg
+package internal
 
 import (
 	"fmt"
@@ -20,6 +20,11 @@ type NumericCode uint
 
 func (code NumericCode) String() string {
 	return fmt.Sprintf("%03d", code)
+}
+
+type Identifiable interface {
+	Id() Name
+	Nick() Name
 }
 
 func NewStringReply(source Identifiable, code StringCode,
@@ -607,7 +612,7 @@ func (target *Client) RplLUserMe() {
 	)
 }
 
-func (target *Client) RplWhoWasUser(whoWas *WhoIs) {
+func (target *Client) RplWhoWasUser(whoWas *WhoWas) {
 	var whoWasHost Name
 
 	if target.modes.Has(Operator) {

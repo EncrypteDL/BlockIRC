@@ -1,8 +1,6 @@
-package pkg
+package internal
 
-import (
-	"strings"
-)
+import "strings"
 
 type CapSubCommand string
 

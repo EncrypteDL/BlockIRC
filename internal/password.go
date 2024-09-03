@@ -1,13 +1,12 @@
-package pkg
+package internal
 
 import (
 	"encoding/base64"
 	"fmt"
 	"sync"
 
+	"github.com/prometheus/common/log"
 	"golang.org/x/crypto/bcrypt"
-
-	log "github.com/sirupsen/logrus"
 )
 
 var DefaultPasswordHasher = &Base64BCryptPasswordHasher{}

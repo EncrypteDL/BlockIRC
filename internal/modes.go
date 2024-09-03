@@ -1,8 +1,6 @@
-package pkg
+package internal
 
-import (
-	"strings"
-)
+import "strings"
 
 // user mode flags
 type UserMode rune

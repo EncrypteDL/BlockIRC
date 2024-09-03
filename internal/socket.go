@@ -1,4 +1,4 @@
-package pkg
+package internal
 
 import (
 	"bufio"
@@ -6,7 +6,7 @@ import (
 	"net"
 	"sync"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/prometheus/common/log"
 )
 
 const (

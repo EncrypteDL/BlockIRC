@@ -1,13 +1,13 @@
-package pkg
+package internal
 
 import "testing"
 
 // hostnames from https://github.com/DanielOaks/irc-parser-tests
 var (
 	goodHostnames = []string{
-		"blocjirc.example.com",
+		"irc.example.com",
 		"i.coolguy.net",
-		"block-srv.net.uk",
+		"irc-srv.net.uk",
 		"iRC.CooLguY.NeT",
 		"gsf.ds342.co.uk",
 		"324.net.uk",

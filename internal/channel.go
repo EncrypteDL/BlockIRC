@@ -1,8 +1,6 @@
-package pkg
+package internal
 
-import (
-	"strconv"
-)
+import "strconv"
 
 type Channel struct {
 	flags     *ChannelModeSet

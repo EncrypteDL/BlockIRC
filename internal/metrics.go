@@ -1,14 +1,13 @@
-package pkg
+package internal
 
 import (
 	"fmt"
 	"net/http"
 	"sync"
 
-	log "github.com/sirupsen/logrus"
-
 	"github.com/prometheus/client_golang/prometheus"
 	"github.com/prometheus/client_golang/prometheus/promhttp"
+	"github.com/prometheus/common/log"
 )
 
 // DefObjectives ...

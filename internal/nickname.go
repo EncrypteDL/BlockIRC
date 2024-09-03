@@ -1,4 +1,4 @@
-package pkg
+package internal
 
 type NickCommand struct {
 	BaseCommand

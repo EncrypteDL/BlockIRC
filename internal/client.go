@@ -1,4 +1,4 @@
-package pkg
+package internal
 
 import (
 	"crypto/tls"
@@ -7,7 +7,7 @@ import (
 	"sync"
 	"time"
 
-	log "github.com/sirupsen/logrus"
+	"github.com/prometheus/common/log"
 )
 
 const (
@@ -116,7 +116,7 @@ func (c *Client) readloop() {
 
 	// Set the hostname for this client.
 	c.hostname = AddrLookupHostname(c.socket.conn.RemoteAddr())
-	c.hostmask = NewName((c.hostname.String()))
+	c.hostmask = NewName(SHA256(c.hostname.String()))
 
 	for err == nil {
 		if line, err = c.socket.Read(); err != nil {

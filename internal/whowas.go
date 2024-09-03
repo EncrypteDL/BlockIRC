@@ -1,15 +1,15 @@
-package pkg
+package internal
 
 import "sync"
 
-type WhoIsList struct {
+type WhoWasList struct {
 	sync.RWMutex
-	buffer []*WhoIs
+	buffer []*WhoWas
 	start  int
 	end    int
 }
 
-type WhoIs struct {
+type WhoWas struct {
 	nickname Name
 	username Name
 	hostname Name
@@ -17,16 +17,16 @@ type WhoIs struct {
 	realname Text
 }
 
-func NewWhoIsList(size uint) *WhoIsList {
-	return &WhoIsList{
-		buffer: make([]*WhoIs, size),
+func NewWhoWasList(size uint) *WhoWasList {
+	return &WhoWasList{
+		buffer: make([]*WhoWas, size),
 	}
 }
 
-func (list *WhoIsList) Append(client *Client) {
+func (list *WhoWasList) Append(client *Client) {
 	list.Lock()
 	defer list.Unlock()
-	list.buffer[list.end] = &WhoIs{
+	list.buffer[list.end] = &WhoWas{
 		nickname: client.Nick(),
 		username: client.username,
 		hostname: client.hostname,
@@ -39,10 +39,10 @@ func (list *WhoIsList) Append(client *Client) {
 	}
 }
 
-func (list *WhoIsList) Find(nickname Name, limit int64) []*WhoIs {
+func (list *WhoWasList) Find(nickname Name, limit int64) []*WhoWas {
 	list.RLock()
 	defer list.RUnlock()
-	results := make([]*WhoIs, 0)
+	results := make([]*WhoWas, 0)
 	for whoWas := range list.Each() {
 		if nickname != whoWas.nickname {
 			continue
@@ -55,7 +55,7 @@ func (list *WhoIsList) Find(nickname Name, limit int64) []*WhoIs {
 	return results
 }
 
-func (list *WhoIsList) prev(index int) int {
+func (list *WhoWasList) prev(index int) int {
 	list.RLock()
 	defer list.RUnlock()
 	index -= 1
@@ -66,8 +66,8 @@ func (list *WhoIsList) prev(index int) int {
 }
 
 // Iterate the buffer in reverse.
-func (list *WhoIsList) Each() <-chan *WhoIs {
-	ch := make(chan *WhoIs)
+func (list *WhoWasList) Each() <-chan *WhoWas {
+	ch := make(chan *WhoWas)
 	go func() {
 		list.RLock()
 		defer list.RUnlock()

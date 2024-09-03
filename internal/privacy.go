@@ -1,4 +1,4 @@
-package pkg
+package internal
 
 func CanSeeChannel(client *Client, channel *Channel) bool {
 	isPrivate := channel.flags.Has(Private)

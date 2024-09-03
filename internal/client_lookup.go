@@ -1,4 +1,4 @@
-package pkg
+package internal
 
 import (
 	"errors"
@@ -6,7 +6,7 @@ import (
 	"strings"
 	"sync"
 
-	"github.com/ergochat/irc-go/ircmatch"
+	"github.com/goshuirc/irc-go/ircmatch"
 )
 
 var (
@@ -221,3 +221,4 @@ func (set *UserMaskSet) setRegexp() {
 	expr := "^" + strings.Join(maskExprs, "|") + "$"
 	set.regexp, _ = regexp.Compile(expr)
 }
+

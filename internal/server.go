@@ -1,4 +1,4 @@
-package pkg
+package internal
 
 import (
 	"bufio"
@@ -15,14 +15,15 @@ import (
 	"os/signal"
 	"path/filepath"
 	"strings"
+	"sync"
 	"syscall"
 	"time"
 
 	"github.com/cretz/bine/tor"
 	"github.com/cretz/bine/torutil/ed25519"
+	"github.com/eyedeekay/i2pkeys"
 	"github.com/eyedeekay/sam3"
-	i2pkeys "github.com/eyedeekay/sam3"
-	log "github.com/sirupsen/logrus"
+	"github.com/prometheus/common/log"
 )
 
 type ServerCommand interface {
@@ -33,6 +34,16 @@ type ServerCommand interface {
 type RegServerCommand interface {
 	Command
 	HandleRegServer(*Server)
+}
+
+type ChannelNameMap struct {
+	sync.RWMutex
+	channels map[Name]*Channel
+}
+
+type Counter struct {
+	sync.RWMutex
+	value int
 }
 
 type Server struct {
@@ -56,6 +67,12 @@ type Server struct {
 	whoWas      *WhoWasList
 	ids         map[string]*Identity
 	templates   map[string]string
+}
+
+type Identity struct {
+	nickname string
+	username string
+	hostname string
 }
 
 var (
@@ -373,7 +390,7 @@ func (s *Server) i2plistener(addr string, i2pconfig *I2PConfig) (net.Listener, e
 	if err != nil {
 		log.Fatalf("error connecting to SAM to %s: %s", addr, err)
 	}
-	var keys *i2pkeys.I2PConfig
+	var keys *i2pkeys.I2PKeys
 	if _, err := os.Stat(i2pconfig.I2Pkeys + ".i2p.private"); os.IsNotExist(err) {
 		f, err := os.Create(i2pconfig.I2Pkeys + ".i2p.private")
 		if err != nil {

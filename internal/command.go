@@ -1,4 +1,5 @@
-package pkg
+package internal
+
 
 import (
 	"errors"

@@ -1,4 +1,4 @@
-package pkg
+package internal
 
 const (
 	CRLF          = "\r\n"
